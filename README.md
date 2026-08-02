@@ -5,6 +5,12 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-REST_API-009688?logo=fastapi&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
+## Live Demo
+
+### [Open IssuePilot](https://issuepilot-tefik.onrender.com)
+
+> The free demo may take up to a minute to wake after a period of inactivity.
+
 **IssuePilot** is a compact full-stack issue tracker built to demonstrate API design, database persistence, frontend integration, validation and automated testing.
 
 ![IssuePilot dashboard](assets/issuepilot-dashboard.jpg)
