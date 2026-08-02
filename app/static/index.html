@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="IssuePilot — a compact issue tracker portfolio project.">
+  <title>IssuePilot</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">PORTFOLIO PROJECT</p>
+      <h1>IssuePilot</h1>
+      <p class="subtitle">Track, prioritise and resolve product issues.</p>
+    </div>
+    <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">API docs ↗</a>
+  </header>
+
+  <main>
+    <section class="stats" aria-label="Issue statistics">
+      <article><span id="stat-total">0</span><small>Total</small></article>
+      <article><span id="stat-open">0</span><small>Open</small></article>
+      <article><span id="stat-progress">0</span><small>In progress</small></article>
+      <article><span id="stat-resolved">0</span><small>Resolved</small></article>
+      <article><span id="stat-critical">0</span><small>Critical</small></article>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel form-panel">
+        <h2>Create issue</h2>
+        <form id="issue-form">
+          <label for="title">Title</label>
+          <input id="title" name="title" minlength="3" maxlength="120" required placeholder="Checkout fails on mobile">
+
+          <label for="description">Description</label>
+          <textarea id="description" name="description" maxlength="2000" rows="5" placeholder="Steps to reproduce, expected result, actual result…"></textarea>
+
+          <label for="priority">Priority</label>
+          <select id="priority" name="priority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+
+          <button type="submit">Create issue</button>
+          <p id="form-message" class="message" role="status"></p>
+        </form>
+      </aside>
+
+      <section class="panel issues-panel">
+        <div class="issues-heading">
+          <div>
+            <p class="eyebrow">LIVE DATA</p>
+            <h2>Issues</h2>
+          </div>
+          <button id="refresh-button" class="secondary" type="button">Refresh</button>
+        </div>
+
+        <div class="filters">
+          <input id="search" type="search" placeholder="Search issues…" aria-label="Search issues">
+          <select id="status-filter" aria-label="Filter by status">
+            <option value="">All statuses</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In progress</option>
+            <option value="resolved">Resolved</option>
+          </select>
+          <select id="priority-filter" aria-label="Filter by priority">
+            <option value="">All priorities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+
+        <div id="issue-list" class="issue-list" aria-live="polite"></div>
+      </section>
+    </section>
+  </main>
+
+  <template id="issue-template">
+    <article class="issue-card">
+      <div class="issue-card-top">
+        <span class="priority-pill"></span>
+        <select class="status-select" aria-label="Change issue status">
+          <option value="open">Open</option>
+          <option value="in_progress">In progress</option>
+          <option value="resolved">Resolved</option>
+        </select>
+      </div>
+      <h3></h3>
+      <p class="description"></p>
+      <div class="issue-footer">
+        <time></time>
+        <button class="delete-button" type="button">Delete</button>
+      </div>
+    </article>
+  </template>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+ISSUEPILOT — GITHUB UPLOAD
+
+1. Unzip this package.
+2. On GitHub, create a PUBLIC repository named: issuepilot
+3. Do not add another README, .gitignore or license during repository creation.
+4. Open the empty repository.
+5. Choose: Add file -> Upload files
+6. Drag the entire CONTENTS of this issuepilot folder into the upload area.
+7. Commit message: Initial IssuePilot release
+8. Commit directly to the main branch.
+
+Important:
+- Upload the contents inside the folder, not the outer ZIP file.
+- Never upload passwords, API keys or private company files.

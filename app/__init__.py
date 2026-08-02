@@ -1,0 +1,1 @@
+"""IssuePilot application package."""
