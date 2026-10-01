@@ -71,3 +71,16 @@ button.secondary { background: transparent; color: var(--text); border: 1px soli
   .topbar { align-items: start; flex-direction: column; padding-top: 28px; }
   .stats { grid-template-columns: 1fr 1fr; }
 }
+[hidden] { display: none !important; }
+.access-bar { max-width: 1180px; margin: 0 auto 20px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.access-bar p { color: #c6d1e5; }
+.login-panel { max-width: 460px; margin: 32px auto; }
+.login-panel form { display: grid; gap: 12px; }
+.workspace.read-only { grid-template-columns: 1fr; }
+.activity-panel { margin-top: 24px; }
+.activity-panel ol, .issue-history ol { padding-left: 22px; }
+.activity-panel li, .issue-history li { margin-bottom: 18px; overflow-wrap: anywhere; }
+.change-value { color: #bdcbe2; font-size: .9rem; white-space: pre-wrap; }
+.issue-history { margin: 16px 0; }
+.issue-history summary { cursor: pointer; color: #b8d4ff; }
+@media (max-width: 520px) { .access-bar { align-items: flex-start; flex-direction: column; } .login-panel { margin: 24px 16px; } }

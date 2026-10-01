@@ -17,7 +17,23 @@
     <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">API docs ↗</a>
   </header>
 
-  <main>
+  <section class="access-bar" aria-label="Workspace access">
+    <p id="access-status" role="status">Checking workspace access...</p>
+    <button id="signout" class="secondary" type="button" hidden>Sign out</button>
+  </section>
+  <section id="login-panel" class="panel login-panel" hidden aria-labelledby="login-heading">
+    <h2 id="login-heading">Sign in to your workspace</h2>
+    <p>Your administrator provides your account. No public registration.</p>
+    <form id="login-form">
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" maxlength="64" required>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" maxlength="256" required>
+      <button type="submit">Sign in</button>
+      <p id="login-message" class="message" role="alert"></p>
+    </form>
+  </section>
+  <main hidden>
     <section class="stats" aria-label="Issue statistics">
       <article><span id="stat-total">0</span><small>Total</small></article>
       <article><span id="stat-open">0</span><small>Open</small></article>
@@ -78,6 +94,12 @@
         <div id="issue-list" class="issue-list" aria-live="polite"></div>
       </section>
     </section>
+    <section class="panel activity-panel" aria-labelledby="activity-heading">
+      <h2 id="activity-heading">Recent activity</h2>
+      <p>Changes recorded since history was enabled. Demo actions are anonymous.</p>
+      <ol id="activity-list"></ol>
+      <button id="older-activity" type="button" class="secondary" hidden>Load older activity</button>
+    </section>
   </main>
 
   <template id="issue-template">
@@ -92,6 +114,11 @@
       </div>
       <h3></h3>
       <p class="description"></p>
+      <details class="issue-history">
+        <summary>Change history</summary>
+        <ol></ol>
+        <button type="button" class="secondary older-history" hidden>Load older changes</button>
+      </details>
       <div class="issue-footer">
         <time></time>
         <button class="delete-button" type="button">Delete</button>

@@ -19,6 +19,8 @@
 
 - Create, search, filter, update and delete product issues
 - Track priority and workflow status
+- Optional private-mode login with admin, editor and viewer roles
+- Transactional issue history with actor, time and before/after snapshots
 - Live dashboard statistics
 - REST API with automatic OpenAPI documentation
 - SQLite persistence with parameterised SQL queries
@@ -62,6 +64,9 @@ SQLite database
 | `PATCH` | `/api/issues/{id}` | Update an issue |
 | `DELETE` | `/api/issues/{id}` | Delete an issue |
 | `GET` | `/api/stats` | Retrieve dashboard statistics |
+| `GET` | `/api/activity` | Paginated workspace history |
+| `GET` | `/api/issues/{id}/history` | History retained after deletion |
+| `GET` / `POST` | `/api/auth/session`, `/api/auth/login`, `/api/auth/logout` | Session access |
 
 Interactive API documentation is available at `/docs` while the application is running.
 
@@ -137,7 +142,6 @@ pytest tests/test_e2e.py -m e2e
 
 ## Possible next steps
 
-- Authentication and role-based access
 - Comments and file attachments
 - PostgreSQL production configuration
 - Expanded CI browser testing
@@ -155,6 +159,10 @@ MIT
 - [API validation and CRUD](app/main.py)
 - [SQLite boundary](app/db.py)
 - [Regression tests](tests/test_api.py)
+- [Access control and sessions](app/access.py)
+- [Transactional history](app/history.py)
+- [Access/history regression tests](tests/test_access_history.py)
+- [Private setup and technical decisions](docs/access-and-history.md)
 - [CI](.github/workflows/tests.yml)
 
 ## Request validation and persistence
@@ -163,7 +171,7 @@ Titles are trimmed before length validation. Explicit null values in PATCH reque
 
 ## Operational boundaries
 
-No authentication, roles or private workspaces. The public demo is shared; use a local instance for data you want to retain.
+The default public demo is shared and anonymous. Private installations can enable session login and admin/editor/viewer roles with `ISSUEPILOT_AUTH_REQUIRED=1`. This is one workspace, without multi-tenancy, MFA or email recovery. [Setup, security boundaries and design decisions](docs/access-and-history.md).
 
 ## Actual application preview
 
