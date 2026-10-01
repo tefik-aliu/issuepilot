@@ -13,12 +13,43 @@ CREATE TABLE IF NOT EXISTS issues (
     status TEXT NOT NULL CHECK(status IN ('open', 'in_progress', 'resolved')),
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
+ );
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('admin', 'editor', 'viewer'))
 );
+CREATE TABLE IF NOT EXISTS sessions (
+    token_hash TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    csrf TEXT NOT NULL,
+    expires_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS login_attempts (username TEXT NOT NULL, attempted_at REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS issue_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    issue_id INTEGER NOT NULL,
+    actor TEXT NOT NULL,
+    action TEXT NOT NULL CHECK(action IN ('created', 'updated', 'deleted')),
+    occurred_at TEXT NOT NULL,
+    before_json TEXT,
+    after_json TEXT
+);
+CREATE INDEX IF NOT EXISTS issue_events_issue ON issue_events(issue_id, id);
 """
 
 
+class Connection(sqlite3.Connection):
+    def __exit__(self, *args):
+        try:
+            return super().__exit__(*args)
+        finally:
+            self.close()
+
+
 def connect(db_path: Path) -> sqlite3.Connection:
-    connection = sqlite3.connect(db_path)
+    connection = sqlite3.connect(db_path, factory=Connection)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     return connection
