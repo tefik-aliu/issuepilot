@@ -88,3 +88,26 @@ def test_validation_rejects_short_title(client: TestClient):
         json={"title": "No", "description": "", "priority": "medium"},
     )
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("title", ["   ", "  a  ", "\t\n"])
+def test_rejects_titles_short_after_trimming(client, title):
+    assert client.post("/api/issues", json={"title": title}).status_code == 422
+    assert client.get("/api/issues").json() == []
+
+
+@pytest.mark.parametrize("field", ["title", "description", "priority", "status"])
+def test_null_patch_is_rejected_without_changing_issue(client, field):
+    original = create_sample_issue(client).json()
+    response = client.patch(f"/api/issues/{original['id']}", json={field: None})
+    assert response.status_code == 422
+    assert client.get("/api/issues").json() == [original]
+
+
+def test_patch_trims_title_before_length_validation(client):
+    original = create_sample_issue(client).json()
+    url = f"/api/issues/{original['id']}"
+    assert client.patch(url, json={"title": "  a  "}).status_code == 422
+    updated = client.patch(url, json={"title": "  Valid title  "})
+    assert updated.json()["title"] == "Valid title"
+    assert updated.json()["description"] == original["description"]

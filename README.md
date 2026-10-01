@@ -140,7 +140,6 @@ pytest tests/test_e2e.py -m e2e
 - Authentication and role-based access
 - Comments and file attachments
 - PostgreSQL production configuration
-- Public cloud deployment
 - Expanded CI browser testing
 
 ## Author
@@ -150,3 +149,24 @@ Built by [Tefik Aliu](https://github.com/tefik-aliu) as a software development a
 ## License
 
 MIT
+
+## Inspect the implementation
+
+- [API validation and CRUD](app/main.py)
+- [SQLite boundary](app/db.py)
+- [Regression tests](tests/test_api.py)
+- [CI](.github/workflows/tests.yml)
+
+## Request validation and persistence
+
+Titles are trimmed before length validation. Explicit null values in PATCH requests return 422 rather than reaching non-null database columns. Omitted fields remain unchanged.
+
+## Operational boundaries
+
+No authentication, roles or private workspaces. The public demo is shared; use a local instance for data you want to retain.
+
+## Actual application preview
+
+![Local application with demonstration data](docs/demo.png)
+
+[Watch the recorded demonstration and read the walkthrough](https://tefik-aliu.github.io/#demos). Captured from a local instance, with demonstration data.
