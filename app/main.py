@@ -9,7 +9,7 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException, Query, Response, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .db import connect, initialise, row_to_dict
 
@@ -18,16 +18,28 @@ IssueStatus = Literal["open", "in_progress", "resolved"]
 
 
 class IssueCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     title: str = Field(min_length=3, max_length=120)
     description: str = Field(default="", max_length=2_000)
     priority: Priority = "medium"
 
 
 class IssueUpdate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     title: str | None = Field(default=None, min_length=3, max_length=120)
     description: str | None = Field(default=None, max_length=2_000)
     priority: Priority | None = None
     status: IssueStatus | None = None
+
+
+    @field_validator("title", "description", "priority", "status")
+    @classmethod
+    def reject_explicit_null(cls, value):
+        if value is None:
+            raise ValueError("Provided fields cannot be null")
+        return value
 
 
 class Issue(BaseModel):
