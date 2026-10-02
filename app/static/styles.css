@@ -83,4 +83,7 @@ button.secondary { background: transparent; color: var(--text); border: 1px soli
 .change-value { color: #bdcbe2; font-size: .9rem; white-space: pre-wrap; }
 .issue-history { margin: 16px 0; }
 .issue-history summary { cursor: pointer; color: #b8d4ff; }
+.issue-conflict { margin: 16px 0; padding: 16px; border-left: 3px solid #ffc176; background: #262230; color: #fff1db; }
+.issue-conflict p { line-height: 1.6; overflow-wrap: anywhere; }
+button:focus-visible { outline: 3px solid #b8d4ff; outline-offset: 3px; }
 @media (max-width: 520px) { .access-bar { align-items: flex-start; flex-direction: column; } .login-panel { margin: 24px 16px; } }

@@ -21,6 +21,7 @@
 - Track priority and workflow status
 - Optional private-mode login with admin, editor and viewer roles
 - Transactional issue history with actor, time and before/after snapshots
+- Version checks stop stale updates and deletes; the browser asks users to review before retrying
 - Live dashboard statistics
 - REST API with automatic OpenAPI documentation
 - SQLite persistence with parameterised SQL queries
@@ -69,6 +70,11 @@ SQLite database
 | `GET` / `POST` | `/api/auth/session`, `/api/auth/login`, `/api/auth/logout` | Session access |
 
 Interactive API documentation is available at `/docs` while the application is running.
+
+**API 1.2:** PATCH and DELETE require `X-Issue-Version`, using the `version`
+returned when you read the issue. A stale version returns 409 without changing
+the issue or its history. A missing version returns 428.
+[Two-browser example, migration and tradeoffs](docs/concurrent-edits.md).
 
 ## Run locally
 
@@ -144,7 +150,7 @@ pytest tests/test_e2e.py -m e2e
 
 - Comments and file attachments
 - PostgreSQL production configuration
-- Expanded CI browser testing
+- Pagination for large issue lists
 
 ## Author
 
@@ -163,6 +169,8 @@ MIT
 - [Transactional history](app/history.py)
 - [Access/history regression tests](tests/test_access_history.py)
 - [Private setup and technical decisions](docs/access-and-history.md)
+- [Concurrent edits: contract and design decisions](docs/concurrent-edits.md)
+- [Concurrent-write regression tests](tests/test_concurrency.py)
 - [CI](.github/workflows/tests.yml)
 
 ## Request validation and persistence

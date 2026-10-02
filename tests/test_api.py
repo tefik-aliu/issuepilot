@@ -54,7 +54,7 @@ def test_filter_and_search(client: TestClient):
 def test_update_issue_status(client: TestClient):
     issue_id = create_sample_issue(client).json()["id"]
     response = client.patch(
-        f"/api/issues/{issue_id}", json={"status": "resolved"}
+        f"/api/issues/{issue_id}", json={"status": "resolved"}, headers={"X-Issue-Version": "1"}
     )
     assert response.status_code == 200
     assert response.json()["status"] == "resolved"
@@ -62,7 +62,7 @@ def test_update_issue_status(client: TestClient):
 
 def test_delete_issue(client: TestClient):
     issue_id = create_sample_issue(client).json()["id"]
-    response = client.delete(f"/api/issues/{issue_id}")
+    response = client.delete(f"/api/issues/{issue_id}", headers={"X-Issue-Version": "1"})
     assert response.status_code == 204
     assert client.get("/api/issues").json() == []
 
@@ -70,7 +70,7 @@ def test_delete_issue(client: TestClient):
 def test_stats(client: TestClient):
     first_id = create_sample_issue(client, priority="critical").json()["id"]
     create_sample_issue(client, title="Minor layout issue", priority="low")
-    client.patch(f"/api/issues/{first_id}", json={"status": "in_progress"})
+    client.patch(f"/api/issues/{first_id}", json={"status": "in_progress"}, headers={"X-Issue-Version": "1"})
 
     stats = client.get("/api/stats").json()
     assert stats == {
@@ -108,6 +108,6 @@ def test_patch_trims_title_before_length_validation(client):
     original = create_sample_issue(client).json()
     url = f"/api/issues/{original['id']}"
     assert client.patch(url, json={"title": "  a  "}).status_code == 422
-    updated = client.patch(url, json={"title": "  Valid title  "})
+    updated = client.patch(url, json={"title": "  Valid title  "}, headers={"X-Issue-Version": "1"})
     assert updated.json()["title"] == "Valid title"
     assert updated.json()["description"] == original["description"]

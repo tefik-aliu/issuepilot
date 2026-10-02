@@ -26,9 +26,11 @@ async function api(path, options = {}) {
 
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
+    let detail;
     try {
       const body = await response.json();
-      message = typeof body.detail === 'string' ? body.detail : 'Check the supplied fields and try again.';
+      detail = body.detail;
+      message = typeof detail === 'string' ? detail : detail?.message || 'Check the supplied fields and try again.';
     } catch (_) {
       // Keep the generic error when a non-JSON response is returned.
     }
@@ -36,7 +38,10 @@ async function api(path, options = {}) {
       sessionUser = null;
       showAccess();
     }
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    error.detail = detail;
+    throw error;
   }
 
   return response.status === 204 ? null : response.json();
@@ -68,6 +73,30 @@ function renderIssues(issues) {
     const card = fragment.querySelector('.issue-card');
     const priorityPill = fragment.querySelector('.priority-pill');
     const statusSelect = fragment.querySelector('.status-select');
+    const deleteButton = fragment.querySelector('.delete-button');
+    const conflict = fragment.querySelector('.issue-conflict');
+    const reviewButton = conflict.querySelector('button');
+    let stale = false;
+
+    function showMutationError(error, attempted) {
+      if (error.status !== 409 && error.status !== 404) {
+        alert(error.message);
+        return;
+      }
+      stale = true;
+      statusSelect.disabled = true;
+      deleteButton.disabled = true;
+      conflict.hidden = false;
+      conflict.querySelector('p').textContent = error.status === 404
+        ? `This issue was deleted. Your ${attempted} was not saved.`
+        : `Another change was saved first. Current status: ${formatStatus(error.detail.current.status)} (version ${error.detail.current.version}). Your ${attempted} was not saved. Load the latest issues, review the changes, then choose again.`;
+      reviewButton.focus();
+    }
+    reviewButton.addEventListener('click', async () => {
+      await refresh();
+      const current = issueList.querySelector(`[data-issue-id="${issue.id}"] .status-select`);
+      (current || searchInput).focus();
+    });
 
     card.dataset.issueId = issue.id;
     priorityPill.textContent = issue.priority;
@@ -107,26 +136,28 @@ function renderIssues(issues) {
       try {
         await api(`/api/issues/${issue.id}`, {
           method: 'PATCH',
+          headers: { 'X-Issue-Version': String(issue.version) },
           body: JSON.stringify({ status: statusSelect.value }),
         });
         await refresh();
       } catch (error) {
-        alert(error.message);
+        showMutationError(error, `change to ${formatStatus(statusSelect.value)}`);
         statusSelect.value = issue.status;
       } finally {
-        statusSelect.disabled = false;
+        statusSelect.disabled = stale || sessionUser?.role === 'viewer';
       }
     });
 
-    fragment.querySelector('.delete-button').addEventListener('click', async () => {
+    deleteButton.addEventListener('click', async () => {
       const confirmed = window.confirm(`Delete “${issue.title}”?`);
       if (!confirmed) return;
+      deleteButton.disabled = true;
       try {
-        await api(`/api/issues/${issue.id}`, { method: 'DELETE' });
+        await api(`/api/issues/${issue.id}`, { method: 'DELETE', headers: { 'X-Issue-Version': String(issue.version) } });
         await refresh();
       } catch (error) {
-        alert(error.message);
-      }
+        showMutationError(error, 'deletion');
+      } finally { deleteButton.disabled = stale; }
     });
 
     issueList.appendChild(fragment);

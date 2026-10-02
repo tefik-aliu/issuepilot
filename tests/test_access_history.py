@@ -83,9 +83,9 @@ def test_role_matrix(private, role, can_write, can_delete):
         201 if can_write else 403
     )
     assert private.patch(
-        f"/api/issues/{issue['id']}", json={"status": "resolved"}
+        f"/api/issues/{issue['id']}", json={"status": "resolved"}, headers={"X-Issue-Version": "1"}
     ).status_code == (200 if can_write else 403)
-    assert private.delete(f"/api/issues/{issue['id']}").status_code == (
+    assert private.delete(f"/api/issues/{issue['id']}", headers={"X-Issue-Version": "2"}).status_code == (
         204 if can_delete else 403
     )
     if not can_write:
@@ -146,10 +146,10 @@ def test_history_snapshots_survive_deletion(private):
     original = private.post("/api/issues", json={"title": "Checkout issue"}).json()
     url = f"/api/issues/{original['id']}"
     updated = private.patch(
-        url, json={"status": "resolved", "description": "Fixed the cause"}
+        url, json={"status": "resolved", "description": "Fixed the cause"}, headers={"X-Issue-Version": "1"}
     ).json()
     sign_in(private)
-    assert private.delete(url).status_code == 204
+    assert private.delete(url, headers={"X-Issue-Version": str(updated["version"])}).status_code == 204
     events = private.get(url + "/history").json()
     assert [e["action"] for e in events] == ["deleted", "updated", "created"]
     assert [e["actor"] for e in events] == ["admin", "editor", "editor"]
@@ -176,9 +176,9 @@ def test_audit_failure_rolls_back_issue_mutation(private, monkeypatch, operation
         if operation == "create":
             private.post("/api/issues", json={"title": "Must not persist"})
         elif operation == "update":
-            private.patch(f"/api/issues/{original['id']}", json={"status": "resolved"})
+            private.patch(f"/api/issues/{original['id']}", json={"status": "resolved"}, headers={"X-Issue-Version": "1"})
         else:
-            private.delete(f"/api/issues/{original['id']}")
+            private.delete(f"/api/issues/{original['id']}", headers={"X-Issue-Version": "1"})
     assert private.get("/api/issues").json() == [original]
     assert len(private.get("/api/activity").json()) == 1
 
@@ -197,7 +197,7 @@ def test_existing_database_migrates_without_invented_history(tmp_path):
     with TestClient(create_app(path)) as client:
         assert client.get("/api/issues").json()[0]["title"] == "Old issue"
         assert client.get("/api/issues/1/history").json() == []
-        client.patch("/api/issues/1", json={"status": "resolved"})
+        client.patch("/api/issues/1", json={"status": "resolved"}, headers={"X-Issue-Version": "1"})
         assert client.get("/api/activity").json()[0]["actor"] == "Public demo"
         assert client.get("/api/auth/session").json()["required"] is False
 
@@ -211,7 +211,7 @@ def test_invalid_access_configuration_fails_closed(tmp_path, monkeypatch):
 def test_anonymous_mutations_and_missing_csrf_are_rejected(private):
     assert private.post("/api/issues", json={"title": "Not allowed"}).status_code == 401
     assert (
-        private.patch("/api/issues/1", json={"status": "resolved"}).status_code == 401
+        private.patch("/api/issues/1", json={"status": "resolved"}, headers={"X-Issue-Version": "1"}).status_code == 401
     )
     assert private.delete("/api/issues/1").status_code == 401
     sign_in(private)
