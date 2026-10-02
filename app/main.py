@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query, Request, Response, status
+from fastapi import FastAPI, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -46,6 +46,7 @@ class IssueUpdate(BaseModel):
 
 class Issue(BaseModel):
     id: int
+    version: int
     title: str
     description: str
     priority: Priority
@@ -66,6 +67,21 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def check_version(existing, expected: str | None) -> None:
+    if expected is None:
+        raise HTTPException(428, "Read the issue and send its version in X-Issue-Version")
+    if not expected.isascii() or not expected.isdecimal() or len(expected) > 19 or int(expected) < 1:
+        raise HTTPException(422, "X-Issue-Version must be a positive integer")
+    if not existing:
+        raise HTTPException(404, "Issue not found")
+    if int(expected) != existing["version"]:
+        raise HTTPException(409, {
+            "code": "version_conflict",
+            "message": "This issue changed since you loaded it. Review the latest version before trying again.",
+            "current": row_to_dict(existing),
+        })
+
+
 def create_app(db_path: str | Path | None = None) -> FastAPI:
     resolved_db_path = Path(
         db_path or os.getenv("ISSUEPILOT_DB", "data/issuepilot.db")
@@ -79,7 +95,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
 
     app = FastAPI(
         title="IssuePilot API",
-        version="1.1.0",
+        version="1.2.0",
         description="A compact issue tracker built as a full-stack portfolio project.",
         lifespan=lifespan,
     )
@@ -208,7 +224,8 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
         return row_to_dict(row)
 
     @app.patch("/api/issues/{issue_id}", response_model=Issue)
-    def update_issue(issue_id: int, payload: IssueUpdate, request: Request) -> dict:
+    def update_issue(issue_id: int, payload: IssueUpdate, request: Request,
+                     x_issue_version: str | None = Header(default=None)) -> dict:
         actor = require_write(request)
         updates = payload.model_dump(exclude_unset=True)
         if not updates:
@@ -227,9 +244,8 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
             existing = connection.execute(
                 "SELECT * FROM issues WHERE id = ?", (issue_id,)
             ).fetchone()
-            if not existing:
-                raise HTTPException(status_code=404, detail="Issue not found")
-            connection.execute(f"UPDATE issues SET {assignments} WHERE id = ?", values)
+            check_version(existing, x_issue_version)
+            connection.execute(f"UPDATE issues SET {assignments}, version = version + 1 WHERE id = ?", values)
             row = connection.execute(
                 "SELECT * FROM issues WHERE id = ?", (issue_id,)
             ).fetchone()
@@ -237,16 +253,16 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
         return row_to_dict(row)
 
     @app.delete("/api/issues/{issue_id}", status_code=status.HTTP_204_NO_CONTENT)
-    def delete_issue(issue_id: int, request: Request) -> Response:
+    def delete_issue(issue_id: int, request: Request,
+                     x_issue_version: str | None = Header(default=None)) -> Response:
         actor = require_write(request, admin=True)
         with connect(app.state.db_path) as connection:
             connection.execute("BEGIN IMMEDIATE")
             existing = connection.execute(
                 "SELECT * FROM issues WHERE id = ?", (issue_id,)
             ).fetchone()
-            cursor = connection.execute("DELETE FROM issues WHERE id = ?", (issue_id,))
-            if cursor.rowcount == 0:
-                raise HTTPException(status_code=404, detail="Issue not found")
+            check_version(existing, x_issue_version)
+            connection.execute("DELETE FROM issues WHERE id = ?", (issue_id,))
             record(connection, actor, "deleted", issue_id, existing, None)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 

@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS issues (
     priority TEXT NOT NULL CHECK(priority IN ('low', 'medium', 'high', 'critical')),
     status TEXT NOT NULL CHECK(status IN ('open', 'in_progress', 'resolved')),
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1
  );
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,6 +60,11 @@ def initialise(db_path: Path) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with connect(db_path) as connection:
         connection.executescript(SCHEMA)
+        # Serialize schema inspection and migration across starting workers.
+        connection.execute("BEGIN IMMEDIATE")
+        columns = {row["name"] for row in connection.execute("PRAGMA table_info(issues)")}
+        if "version" not in columns:
+            connection.execute("ALTER TABLE issues ADD COLUMN version INTEGER NOT NULL DEFAULT 1")
 
 
 def row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
